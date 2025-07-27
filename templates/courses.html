@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Курсы программирования - CodeAcademy Pro{% endblock %}
+
+{% block content %}
+<div class="courses-container">
+    <div class="courses-header">
+        <h1>Выберите курс для изучения</h1>
+        <p>Начните свой путь в программировании с любого из доступных языков</p>
+    </div>
+
+    <div class="courses-grid">
+        <!-- Активный курс Dart -->
+        <div class="course-card active">
+            <div class="course-icon">🎯</div>
+            <h3>Dart</h3>
+            <p>Современный язык от Google для создания мобильных и веб-приложений</p>
+            <div class="course-stats">
+                <span class="difficulty">Начальный</span>
+                <span class="lessons-count">33 урока</span>
+            </div>
+            <div class="course-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+                <span class="progress-text">0% завершено</span>
+            </div>
+            <a href="{{ url_for('lessons') }}" class="course-button available">Начать изучение</a>
+        </div>
+
+        <!-- Скоро доступные курсы -->
+        <div class="course-card coming-soon">
+            <div class="course-icon">🐍</div>
+            <h3>Python</h3>
+            <p>Популярный язык для разработки, анализа данных и машинного обучения</p>
+            <div class="course-stats">
+                <span class="difficulty">Начальный</span>
+                <span class="lessons-count">Скоро</span>
+            </div>
+            <button class="course-button coming-soon-btn" disabled>Скоро доступен</button>
+        </div>
+
+        <div class="course-card coming-soon">
+            <div class="course-icon">⚡</div>
+            <h3>JavaScript</h3>
+            <p>Язык веб-разработки для создания интерактивных сайтов и приложений</p>
+            <div class="course-stats">
+                <span class="difficulty">Начальный</span>
+                <span class="lessons-count">Скоро</span>
+            </div>
+            <button class="course-button coming-soon-btn" disabled>Скоро доступен</button>
+        </div>
+
+        <div class="course-card coming-soon">
+            <div class="course-icon">☕</div>
+            <h3>Java</h3>
+            <p>Мощный объектно-ориентированный язык для корпоративной разработки</p>
+            <div class="course-stats">
+                <span class="difficulty">Средний</span>
+                <span class="lessons-count">Скоро</span>
+            </div>
+            <button class="course-button coming-soon-btn" disabled>Скоро доступен</button>
+        </div>
+
+        <div class="course-card coming-soon">
+            <div class="course-icon">💎</div>
+            <h3>C#</h3>
+            <p>Универсальный язык от Microsoft для различных типов приложений</p>
+            <div class="course-stats">
+                <span class="difficulty">Средний</span>
+                <span class="lessons-count">Скоро</span>
+            </div>
+            <button class="course-button coming-soon-btn" disabled>Скоро доступен</button>
+        </div>
+
+        <div class="course-card coming-soon">
+            <div class="course-icon">🦀</div>
+            <h3>Rust</h3>
+            <p>Системный язык программирования с фокусом на безопасность и производительность</p>
+            <div class="course-stats">
+                <span class="difficulty">Продвинутый</span>
+                <span class="lessons-count">Скоро</span>
+            </div>
+            <button class="course-button coming-soon-btn" disabled>Скоро доступен</button>
+        </div>
+    </div>
+
+    <div class="learning-path">
+        <h2>Рекомендуемый путь обучения</h2>
+        <div class="path-steps">
+            <div class="path-step active">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Dart</h4>
+                    <p>Изучите основы программирования на современном языке</p>
+                </div>
+            </div>
+            <div class="path-arrow">→</div>
+            <div class="path-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Python</h4>
+                    <p>Расширьте знания универсальным языком</p>
+                </div>
+            </div>
+            <div class="path-arrow">→</div>
+            <div class="path-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>JavaScript</h4>
+                    <p>Создавайте интерактивные веб-приложения</p>
+                </div>
+            </div>
+            <div class="path-arrow">→</div>
+            <div class="path-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Специализация</h4>
+                    <p>Выберите направление: Java, C# или Rust</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script id="server-progress-data" type="application/json">
+    {{ progress|tojson }}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем анимацию карточкам курсов
+    const courseCards = document.querySelectorAll('.course-card');
+    courseCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Обновляем прогресс курса Dart
+    updateDartProgress();
+});
+
+function updateDartProgress() {
+    // Получаем прогресс с сервера, если доступен
+    let serverProgress = [];
+    const progressDataElement = document.getElementById('server-progress-data');
+    if (progressDataElement) {
+        try {
+            serverProgress = JSON.parse(progressDataElement.textContent);
+        } catch (e) {
+            console.error('Ошибка парсинга данных прогресса:', e);
+        }
+    }
+    
+    const totalLessons = 33;
+    let completedLessons = 0;
+    
+    // Проверяем прогресс на сервере
+    if (serverProgress.length > 0) {
+        // Предполагаем, что lesson_id соответствует номеру урока (1-33)
+        serverProgress.forEach(item => {
+            if (item.completed && item.lesson_id >= 1 && item.lesson_id <= totalLessons) {
+                completedLessons++;
+            }
+        });
+    } else {
+        // Если нет данных с сервера, используем localStorage
+        const progressKey = 'lesson_progress';
+        const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+        
+        for (let i = 1; i <= totalLessons; i++) {
+            if (progress[i] && progress[i].completed) {
+                completedLessons++;
+            }
+        }
+    }
+    
+    const progressPercent = (completedLessons / totalLessons) * 100;
+    
+    const progressFill = document.querySelector('.progress-fill');
+    const progressText = document.querySelector('.progress-text');
+    
+    if (progressFill && progressText) {
+        progressFill.style.width = progressPercent + '%';
+        progressText.textContent = Math.round(progressPercent) + '% завершено';
+    }
+}
+</script>
+{% endblock %}

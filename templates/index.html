@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Добро пожаловать в CodeAcademy Pro</h1>
+        <p>Изучайте программирование интерактивно онлайн</p>
+        <a href="{{ url_for('courses') }}" class="cta-button">Выбрать курс</a>
+    </div>
+</div>
+
+<div class="features-section">
+    <div class="container">
+        <h2>Почему CodeAcademy Pro?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>💻 Интерактивное обучение</h3>
+                <p>Пишите и запускайте код прямо в браузере</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎯 Практический подход</h3>
+                <p>Учитесь на реальных проектах и задачах</p>
+            </div>
+            <div class="feature-card">
+                <h3>📚 Множество языков</h3>
+                <p>Dart, Python, JavaScript и многие другие</p>
+            </div>
+            <div class="feature-card">
+                <h3>⚡ Мгновенный фидбек</h3>
+                <p>Получайте результаты выполнения кода моментально</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="demo-section">
+    <div class="container">
+        <h2>Попробуйте Dart прямо сейчас</h2>
+        <div class="code-playground">
+            <div class="editor-container">
+                <h3>Редактор кода</h3>
+                <textarea id="demo-editor">void main() {
+  print('Привет, мир!');
+  print('Добро пожаловать в изучение Dart!');
+}</textarea>
+            </div>
+            <div class="output-container">
+                <h3>Результат выполнения</h3>
+                <div id="demo-output" class="output-display">
+                    Нажмите "Запустить код" чтобы увидеть результат
+                </div>
+                <button id="run-demo" class="run-button">Запустить код</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const demoEditor = CodeMirror.fromTextArea(document.getElementById('demo-editor'), {
+        mode: 'dart',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseBrackets: true,
+        matchBrackets: true
+    });
+
+    document.getElementById('run-demo').addEventListener('click', function() {
+        const code = demoEditor.getValue();
+        runDartCode(code, 'demo-output');
+    });
+});
+</script>
+{% endblock %}

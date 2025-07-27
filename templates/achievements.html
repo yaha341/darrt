@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+
+{% block title %}Достижения - IT Академия{% endblock %}
+
+{% block content %}
+<div class="achievements-container">
+    <div class="achievements-header">
+        <h1>🏆 Ваши достижения</h1>
+        <div class="stats-summary">
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="total-points">0</div>
+                    <div class="stat-label">Очков</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="earned-count">0</div>
+                    <div class="stat-label">Получено</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="completion-rate">0%</div>
+                    <div class="stat-label">Прогресс</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="achievements-filters">
+        <button class="filter-btn active" data-category="all">Все</button>
+        <button class="filter-btn" data-category="Прогресс">Прогресс</button>
+        <button class="filter-btn" data-category="Категории">Категории</button>
+        <button class="filter-btn" data-category="Скорость">Скорость</button>
+        <button class="filter-btn" data-category="Активность">Активность</button>
+        <button class="filter-btn" data-category="Особые">Особые</button>
+    </div>
+
+    <div class="achievements-grid" id="achievements-grid">
+        <!-- Достижения будут загружены через JavaScript -->
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка достижений...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.achievements-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.achievements-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.achievements-header h1 {
+    color: var(--text-color);
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+}
+
+.stats-summary {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 150px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.achievements-filters {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.filter-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.achievement-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-card.earned {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(76, 175, 80, 0.1) 100%);
+}
+
+.achievement-card.earned::before {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: var(--success-color);
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.achievement-card:not(.earned) {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+}
+
+.achievement-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.achievement-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.achievement-icon {
+    font-size: 2.5rem;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.achievement-info h3 {
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+    font-size: 1.2rem;
+}
+
+.achievement-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 15px;
+}
+
+.achievement-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
+}
+
+.achievement-points {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.achievement-category {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.achievement-date {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.achievement-unlock-animation {
+    animation: achievement-unlock 0.8s ease-out;
+}
+
+@keyframes achievement-unlock {
+    0% {
+        transform: scale(0.8) rotate(-5deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05) rotate(2deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .achievements-container {
+        padding: 15px;
+    }
+    
+    .achievements-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-summary {
+        gap: 15px;
+    }
+    
+    .stat-card {
+        min-width: 120px;
+        padding: 15px;
+    }
+    
+    .achievements-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .filter-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+let allAchievements = [];
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAchievements();
+    setupFilters();
+});
+
+async function loadAchievements() {
+    try {
+        const response = await fetch('/api/achievements');
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        allAchievements = data.achievements;
+        updateStats(data);
+        renderAchievements();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки достижений:', error);
+        document.getElementById('achievements-grid').innerHTML = `
+            <div class="loading">
+                <p style="color: var(--error-color);">❌ Ошибка загрузки достижений</p>
+            </div>
+        `;
+    }
+}
+
+function updateStats(data) {
+    document.getElementById('total-points').textContent = data.total_points;
+    document.getElementById('earned-count').textContent = data.earned_count;
+    
+    const totalAchievements = data.achievements.length;
+    const completionRate = totalAchievements > 0 ? Math.round((data.earned_count / totalAchievements) * 100) : 0;
+    document.getElementById('completion-rate').textContent = completionRate + '%';
+}
+
+function renderAchievements() {
+    const filteredAchievements = currentFilter === 'all' 
+        ? allAchievements 
+        : allAchievements.filter(ach => ach.category === currentFilter);
+    
+    const grid = document.getElementById('achievements-grid');
+    
+    if (filteredAchievements.length === 0) {
+        grid.innerHTML = `
+            <div class="loading">
+                <p>🔍 Достижений в этой категории пока нет</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = filteredAchievements.map(achievement => `
+        <div class="achievement-card ${achievement.earned ? 'earned' : ''}" data-category="${achievement.category}">
+            <div class="achievement-header">
+                <div class="achievement-icon">${achievement.icon}</div>
+                <div class="achievement-info">
+                    <h3>${achievement.name}</h3>
+                </div>
+            </div>
+            <div class="achievement-description">${achievement.description}</div>
+            <div class="achievement-footer">
+                <div class="achievement-points">
+                    ⭐ ${achievement.points} очков
+                </div>
+                <div class="achievement-category">${achievement.category}</div>
+            </div>
+            ${achievement.earned && achievement.earned_at ? `
+                <div class="achievement-date">
+                    Получено: ${new Date(achievement.earned_at).toLocaleDateString('ru-RU')}
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function setupFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Обновляем активную кнопку
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Обновляем фильтр и перерисовываем
+            currentFilter = button.dataset.category;
+            renderAchievements();
+        });
+    });
+}
+
+// Функция для показа уведомления о новом достижении
+function showAchievementNotification(achievement) {
+    const notification = document.createElement('div');
+    notification.className = 'achievement-notification';
+    notification.innerHTML = `
+        <div class="achievement-notification-content">
+            <div class="achievement-notification-icon">${achievement.icon}</div>
+            <div class="achievement-notification-text">
+                <h4>🎉 Новое достижение!</h4>
+                <p><strong>${achievement.name}</strong></p>
+                <small>+${achievement.points} очков</small>
+            </div>
+        </div>
+    `;
+    
+    // Добавляем стили для уведомления
+    const style = document.createElement('style');
+    style.textContent = `
+        .achievement-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 10000;
+            animation: slideInRight 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+            max-width: 300px;
+        }
+        
+        .achievement-notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .achievement-notification-icon {
+            font-size: 2rem;
+        }
+        
+        .achievement-notification-text h4 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+        }
+        
+        .achievement-notification-text p {
+            margin: 0 0 3px 0;
+            font-size: 0.9rem;
+        }
+        
+        .achievement-notification-text small {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(notification);
+    
+    // Удаляем уведомление через 5 секунд
+    setTimeout(() => {
+        notification.remove();
+        style.remove();
+    }, 5000);
+}
+
+// Экспортируем функцию для использования в других скриптах
+window.showAchievementNotification = showAchievementNotification;
+</script>
+{% endblock %}

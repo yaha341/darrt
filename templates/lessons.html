@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Уроки Dart - IT Академия{% endblock %}
+
+{% block content %}
+<div class="lessons-container">
+    <div class="lessons-sidebar">
+        <h2>Курс Dart</h2>
+        <div class="course-progress-summary">
+            <div class="progress-circle">
+                <span id="progress-percentage">0%</span>
+            </div>
+            <p>Прогресс курса</p>
+        </div>
+        <div id="lessons-list" class="lessons-list">
+            <!-- Список уроков будет загружен через JavaScript -->
+        </div>
+        
+        {% if progress %}
+        <script id="server-progress-data" type="application/json">
+            {{ progress|tojson }}
+        </script>
+        {% endif %}
+    </div>
+
+    <div class="lesson-content">
+        <div id="lesson-header" class="lesson-header">
+            <div class="lesson-meta">
+                <span id="lesson-category" class="lesson-category">Категория</span>
+                <span id="lesson-difficulty" class="lesson-difficulty">Сложность</span>
+                <span id="lesson-progress" class="lesson-progress">Прогресс: <span id="progress-text">0%</span></span>
+            </div>
+            <h1 id="lesson-title">Выберите урок для начала</h1>
+            <p id="lesson-description">Описание урока появится здесь</p>
+        </div>
+
+        <div id="lesson-theory" class="lesson-theory" style="display: none;">
+            <h3>📚 Теория</h3>
+            <div id="theory-content" class="theory-content"></div>
+            <button id="show-task" class="theory-button">Перейти к заданию →</button>
+        </div>
+
+        <div id="lesson-task" class="lesson-task" style="display: none;">
+            <h3>🎯 Задание</h3>
+            <p id="task-description"></p>
+        </div>
+
+        <div id="lesson-workspace" class="lesson-workspace" style="display: none;">
+            <div class="code-section">
+                <div class="editor-header">
+                    <h3>Редактор кода</h3>
+                    <button id="reset-code" class="reset-button">Сбросить код</button>
+                </div>
+                <textarea id="code-editor" placeholder="Код урока будет загружен здесь..."></textarea>
+            </div>
+
+            <div class="output-section">
+                <div class="output-header">
+                    <h3>Результат</h3>
+                    <button id="run-code" class="run-button">Запустить код</button>
+                </div>
+                <div id="code-output" class="output-display">
+                    Результат выполнения кода появится здесь
+                </div>
+                <div id="hints-section" class="hints-section" style="display: none;">
+                    <h4>💡 Подсказки</h4>
+                    <ul id="hints-list"></ul>
+                    <button id="show-hints" class="hints-button">Показать подсказки</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="lesson-controls" class="lesson-controls" style="display: none;">
+            <button id="prev-lesson" class="nav-button">← Предыдущий урок</button>
+            <button id="next-lesson" class="nav-button">Следующий урок →</button>
+        </div>
+    </div>
+</div>
+
+<div id="loading" class="loading" style="display: none;">
+    <div class="loading-spinner"></div>
+    <p>Выполнение кода...</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentLesson = null;
+let lessons = [];
+let codeEditor;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация редактора кода
+    codeEditor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+        mode: 'dart',
+        theme: 'monokai',
+        lineNumbers: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        indentUnit: 2,
+        tabSize: 2
+    });
+
+    // Загрузка списка уроков
+    loadLessons();
+
+    // Обработчики событий
+    document.getElementById('run-code').addEventListener('click', function() {
+        const code = codeEditor.getValue();
+        runDartCode(code, 'code-output');
+    });
+
+    document.getElementById('reset-code').addEventListener('click', function() {
+        if (currentLesson) {
+            codeEditor.setValue(currentLesson.code_template);
+        }
+    });
+
+    document.getElementById('prev-lesson').addEventListener('click', function() {
+        const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
+        if (currentIndex > 0) {
+            loadLesson(lessons[currentIndex - 1]);
+        }
+    });
+
+    document.getElementById('next-lesson').addEventListener('click', function() {
+        const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
+        if (currentIndex < lessons.length - 1) {
+            loadLesson(lessons[currentIndex + 1]);
+        }
+    });
+
+    // Кнопка перехода к заданию
+    document.getElementById('show-task').addEventListener('click', function() {
+        document.getElementById('lesson-workspace').style.display = 'block';
+        document.querySelector('.lesson-workspace').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Кнопка показа подсказок
+    document.getElementById('show-hints').addEventListener('click', function() {
+        const hintsList = document.getElementById('hints-list');
+        const button = document.getElementById('show-hints');
+        
+        if (hintsList.style.display === 'none' || hintsList.style.display === '') {
+            hintsList.style.display = 'block';
+            button.textContent = 'Скрыть подсказки';
+        } else {
+            hintsList.style.display = 'none';
+            button.textContent = 'Показать подсказки';
+        }
+    });
+});
+
+function updateProgressDisplay() {
+    const progressKey = 'lesson_progress';
+    const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+    
+    const totalLessons = lessons.length;
+    let completedLessons = 0;
+    
+    for (let i = 1; i <= totalLessons; i++) {
+        if (progress[i] && progress[i].completed) {
+            completedLessons++;
+        }
+    }
+    
+    const progressPercent = Math.round((completedLessons / totalLessons) * 100);
+    document.getElementById('progress-percentage').textContent = progressPercent + '%';
+}
+
+async function loadLessons() {
+    try {
+        const response = await fetch('/api/lessons');
+        lessons = await response.json();
+        
+        const lessonsListEl = document.getElementById('lessons-list');
+        lessonsListEl.innerHTML = '';
+        
+        // Группируем уроки по категориям
+        const categories = {};
+        lessons.forEach(lesson => {
+            if (!categories[lesson.category]) {
+                categories[lesson.category] = [];
+            }
+            categories[lesson.category].push(lesson);
+        });
+        
+        // Создаем секции для каждой категории
+        Object.keys(categories).forEach(category => {
+            const categoryEl = document.createElement('div');
+            categoryEl.className = 'category-section';
+            categoryEl.innerHTML = `<h3 class="category-title">${category}</h3>`;
+            
+            categories[category].forEach(lesson => {
+                const lessonEl = document.createElement('div');
+                lessonEl.className = 'lesson-item';
+                lessonEl.innerHTML = `
+                    <div class="lesson-number">${lesson.id}</div>
+                    <div class="lesson-info">
+                        <h4>${lesson.title}</h4>
+                        <p>${lesson.description}</p>
+                        <span class="difficulty-badge ${lesson.difficulty.toLowerCase()}">${lesson.difficulty}</span>
+                    </div>
+                `;
+                lessonEl.addEventListener('click', () => loadLesson(lesson));
+                categoryEl.appendChild(lessonEl);
+            });
+            
+            lessonsListEl.appendChild(categoryEl);
+        });
+        
+        // Загружаем первый урок по умолчанию
+        if (lessons.length > 0) {
+            loadLesson(lessons[0]);
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке уроков:', error);
+    }
+}
+
+function loadLesson(lesson) {
+    currentLesson = lesson;
+    
+    // Обновляем мета-информацию
+    document.getElementById('lesson-category').textContent = lesson.category;
+    document.getElementById('lesson-difficulty').textContent = lesson.difficulty;
+    document.getElementById('lesson-difficulty').className = `lesson-difficulty ${lesson.difficulty.toLowerCase()}`;
+    
+    // Обновляем заголовок и описание
+    document.getElementById('lesson-title').textContent = lesson.title;
+    document.getElementById('lesson-description').textContent = lesson.description;
+    
+    // Показываем теорию
+    const theoryEl = document.getElementById('lesson-theory');
+    const theoryContent = document.getElementById('theory-content');
+    if (lesson.theory) {
+        theoryContent.innerHTML = marked.parse(lesson.theory);
+        theoryEl.style.display = 'block';
+    }
+    
+    // Показываем задание
+    const taskEl = document.getElementById('lesson-task');
+    const taskDescription = document.getElementById('task-description');
+    if (lesson.task) {
+        taskDescription.textContent = lesson.task;
+        taskEl.style.display = 'block';
+    }
+    
+    // Загружаем подсказки
+    const hintsSection = document.getElementById('hints-section');
+    const hintsList = document.getElementById('hints-list');
+    if (lesson.hints && lesson.hints.length > 0) {
+        hintsList.innerHTML = '';
+        lesson.hints.forEach(hint => {
+            const li = document.createElement('li');
+            li.textContent = hint;
+            hintsList.appendChild(li);
+        });
+        hintsSection.style.display = 'block';
+    }
+    
+    // Скрываем рабочую область изначально
+    document.getElementById('lesson-workspace').style.display = 'none';
+    document.getElementById('lesson-controls').style.display = 'flex';
+    
+    // Загружаем код урока
+    codeEditor.setValue(lesson.code_template);
+    
+    // Обновляем активный урок в списке
+    document.querySelectorAll('.lesson-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const lessonItems = document.querySelectorAll('.lesson-item');
+    const lessonIndex = lessons.findIndex(l => l.id === lesson.id);
+    if (lessonItems[lessonIndex]) {
+        lessonItems[lessonIndex].classList.add('active');
+    }
+    
+    // Обновляем состояние кнопок навигации
+    const currentIndex = lessons.findIndex(l => l.id === lesson.id);
+    document.getElementById('prev-lesson').disabled = currentIndex === 0;
+    document.getElementById('next-lesson').disabled = currentIndex === lessons.length - 1;
+    
+    // Обновляем прогресс
+    updateProgressDisplay();
+}
+</script>
+{% endblock %}
